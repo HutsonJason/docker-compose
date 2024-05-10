@@ -11,14 +11,17 @@ Instructions for getting Baikal up and running.
 Requirements for setup:
 - [Docker Compose](https://docs.docker.com/compose/install/) installed
 - Traefik up and running
-  - Traefik docker compose repo here
+
+> [!NOTE]
+> [Traefik docker-compose here](/traefik/)
 
 ### Installing
 
 #### Docker compose
 
-- Copy the docker-compose.yml file into the directory used for Baikal
-- Edit the lines with `baikal.your-domain.com` to your own domain name
+Copy the `docker-compose.yml` file into the Baikal directory
+> [!IMPORTANT]
+> Edit the lines with `baikal.your-domain.com` to your own domain name in the docker-compose file.
 
 #### Directory setup
 
@@ -43,7 +46,7 @@ This is what the directory structure should look like when finished:
 From the Baikal directory, deploy the docker container:
 
 ```sh
-docker compose up -d
+sudo docker compose up -d
 ```
 
 Baikal should now be running at baikal.your-domain.com

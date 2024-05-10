@@ -1,0 +1,58 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# (Optional) Enable API and Dashboard here, don't do in production.
+# api:
+#   dashboard: true
+#   debug: true
+log:
+  # level: DEBUG
+  filePath: "/var/log/traefik/traefik.log"
+
+entryPoints:
+  http:
+    address: :80
+    http:
+      middlewares:
+        - ip-allowlist@file
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+  https:
+    address: :443
+    http:
+      middlewares:
+        - ip-allowlist@file
+
+serversTransport:
+  insecureSkipVerify: true
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    filename: /config.yml
+    watch: true
+
+certificatesResolvers:
+  cloudflare:
+    acme:
+      # Update email on this line.
+      email: YOUR_CLOUDFLARE_EMAIL_ADDRESS
+      storage: acme.json
+      
+      # Uncomment the line to use Let's Encrypt's staging server.
+      # Leave commented to go to production.
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+        # Uncomment this if you have issues pulling certificates through cloudflare.
+        # By setting this flag to true disables the need to wait for the propagation of the TXT record to all authoritative name servers.
+        disablePropagationCheck: true
