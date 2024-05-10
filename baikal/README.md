@@ -21,7 +21,7 @@ Requirements for setup:
 
 Copy the `docker-compose.yml` file into the Baikal directory
 > [!IMPORTANT]
-> Edit the lines with `baikal.your-domain.com` to your own domain name in the docker-compose file.
+> In the `docker-compose.yml` file update the lines with `baikal.your-domain.com` to your own domain name.
 
 #### Directory setup
 

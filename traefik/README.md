@@ -37,7 +37,9 @@ This is what the directory structure should look like when finished:
 - Copy the `docker-compose.yml` file into the Traefik directory
 
 > [!IMPORTANT]
-> Edit the lines with `traefik.your-domain.com` to your own domain name in the docker-compose file.
+> In the `docker-compose.yml` file update the lines with `traefik.your-domain.com` to your own domain name.
+>
+> In the `traefik.yml` file update the line with `YOUR_CLOUDFLARE_EMAIL_ADDRESS` to your Cloudflare account email.
 
 #### Create acme.json
 
@@ -156,7 +158,7 @@ The `proxy` network should now be listed when checking the networks.
 From the Traefik directory, deploy the docker container:
 
 ```sh
-docker compose up -d
+sudo docker compose up -d
 ```
 
 Traefik should now be running at traefik.your-domain.com

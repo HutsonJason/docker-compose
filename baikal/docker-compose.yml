@@ -15,7 +15,7 @@ services:
       - ./config:/var/www/baikal/config
       - ./Specific:/var/www/baikal/Specific
     networks:
-      proxy:
+      - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.baikal.entrypoints=http"
