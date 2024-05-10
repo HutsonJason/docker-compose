@@ -13,7 +13,7 @@ secrets:
 
 services:
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.0
     container_name: traefik
     restart: unless-stopped
     security_opt:
@@ -40,7 +40,7 @@ services:
       - cloudflare_zone_api_token
       - htpasswd
     networks:
-      proxy:
+      - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
