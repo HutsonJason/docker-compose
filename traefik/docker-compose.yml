@@ -1,0 +1,63 @@
+networks:
+  proxy:
+    name: proxy
+    external: true
+
+secrets:
+  cloudflare_dns_api_token:
+    file: ./secrets/cloudflare_dns_api_token
+  cloudflare_zone_api_token:
+    file: ./secrets/cloudflare_zone_api_token
+  htpasswd:
+    file: ./secrets/.htpasswd
+
+services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 80:80
+      - 443:443
+      # (Optional) Enable Dashboard here, don't do in production.
+      # - 8080:8080
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./acme.json:/acme.json
+      - ./config.yml:/config.yml:ro
+      - ./logs:/var/log/traefik
+    environment:
+      - CF_DNS_API_TOKEN_FILE=/run/secrets/cloudflare_dns_api_token
+      - CF_ZONE_API_TOKEN_FILE=/run/secrets/cloudflare_zone_api_token
+      - CLOUDFLARE_POLLING_INTERVAL=10
+      - CLOUDFLARE_PROPAGATION_TIMEOUT=300
+    secrets:
+      - cloudflare_dns_api_token
+      - cloudflare_zone_api_token
+      - htpasswd
+    networks:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      # Update domain name on this line.
+      - "traefik.http.routers.traefik.rule=Host(`traefik.your-domain.com`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.usersfile=/run/secrets/htpasswd"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      # Update domain name on this line.
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.your-domain.com`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      # Update domain name on these lines.
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=your-domain.com"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.your-domain.com"
+      # (Optional) Enable API here.
+      # - "traefik.http.routers.traefik-secure.service=api@internal"
