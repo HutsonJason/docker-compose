@@ -55,19 +55,13 @@ sudo chmod 600 acme.json
 
 #### Create directories
 
-Create the logs directory in the Traefik directory:
+Create the logs and secrets directories in the Traefik directory:
 
 ```sh
-mkdir logs
+mkdir logs secrets
 ```
 
-Create the secrets directory in the Traefik directory:
-
-```sh
-mkdir secrets
-```
-
-Change permissions of this directory to 600, owned by the user root and group root:
+Change permissions of the secrets directory to 600, owned by the user root and group root:
 
 ```sh
 sudo chown root:root secrets/
@@ -76,7 +70,7 @@ sudo chmod 600 secrets/
 
 ##### Create the secret files
 
-To create the files in the secrets folder, you will need root:
+To create the files in the secrets directory, you will need root:
 
 ```sh
 sudo su
@@ -84,6 +78,12 @@ sudo su
 
 > [!NOTE]
 > The only thing to add to these files is the specific API token from Cloudflare.
+
+Change into the secrets directory:
+
+```sh
+cd secrets
+```
 
 Create and add the Cloudflare DNS token with preferred editor:
 
@@ -105,7 +105,7 @@ exit
 
 ##### Create basic auth password
 
-To create the basic auth password file use the Apache Utilities Package.
+Use the Apache Utilities Package to create the basic auth password file.
 
 First update the server's package index:
 
