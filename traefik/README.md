@@ -161,4 +161,4 @@ From the Traefik directory, deploy the docker container:
 sudo docker compose up -d
 ```
 
-Traefik should now be running at traefik.your-domain.com
+Traefik should now be running at https://traefik.your-domain.com

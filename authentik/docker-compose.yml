@@ -1,0 +1,135 @@
+networks:
+  proxy:
+    external: true
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password
+  postgres_user:
+    file: ./secrets/postgres_user
+  postgres_db:
+    file: ./secrets/postgres_db
+  authentik_secret_key:
+    file: ./secrets/authentik_secret_key
+
+services:
+  postgresql:
+    image: docker.io/library/postgres:12-alpine
+    container_name: authentik-postgresql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=/run/secrets/postgres_password
+      - POSTGRES_USER=/run/secrets/postgres_user
+      - POSTGRES_DB=/run/secrets/postgres_db
+    secrets:
+      - postgres_password
+      - postgres_user
+      - postgres_db
+    networks:
+      - proxy
+
+  redis:
+    image: docker.io/library/redis:alpine
+    container_name: authentik-redis
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis:/data
+    networks:
+      - proxy
+
+  server:
+    image: ghcr.io/goauthentik/server:2024.4.2
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis
+      - AUTHENTIK_POSTGRESQL__HOST=postgresql
+      - AUTHENTIK_POSTGRESQL__USER=/run/secrets/postgres_user
+      - AUTHENTIK_POSTGRESQL__NAME=/run/secrets/postgres_db
+      - AUTHENTIK_POSTGRESQL__PASSWORD=/run/secrets/postgres_password
+      - AUTHENTIK_SECRET_KEY=/run/secrets/authentik_secret_key
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=true
+    secrets:
+      - postgres_password
+      - postgres_user
+      - postgres_db
+      - authentik_secret_key
+    volumes:
+      - ./media:/media
+      - ./custom-templates:/templates
+    depends_on:
+      - postgresql
+      - redis
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.entrypoints=http"
+      # Update domain name on this line.
+      - "traefik.http.routers.authentik.rule=Host(`authentik.your-domain.com`)"
+      - "traefik.http.middlewares.authentik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.authentik.middlewares=authentik-https-redirect"
+      - "traefik.http.routers.authentik-secure.entrypoints=https"
+      # Update domain name on this line.
+      - "traefik.http.routers.authentik-secure.rule=Host(`authentik.your-domain.com`)"
+      - "traefik.http.routers.authentik-secure.tls=true"
+      - "traefik.http.routers.authentik-secure.service=authentik"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+
+  worker:
+    image: ghcr.io/goauthentik/server:2024.4.2
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis
+      - AUTHENTIK_POSTGRESQL__HOST=postgresql
+      - AUTHENTIK_POSTGRESQL__USER=/run/secrets/postgres_user
+      - AUTHENTIK_POSTGRESQL__NAME=/run/secrets/postgres_db
+      - AUTHENTIK_POSTGRESQL__PASSWORD=/run/secrets/postgres_password
+      - AUTHENTIK_SECRET_KEY=/run/secrets/authentik_secret_key
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=true
+    secrets:
+      - postgres_password
+      - postgres_user
+      - postgres_db
+      - authentik_secret_key
+    # `user: root` and the docker socket volume are optional.
+    # See more for the docker socket integration here:
+    # https://goauthentik.io/docs/outposts/integrations/docker
+    # Removing `user: root` also prevents the worker from fixing the permissions
+    # on the mounted folders, so when removing this make sure the folders have the correct UID/GID
+    # (1000:1000 by default)
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./media:/media
+      - ./certs:/certs
+      - ./custom-templates:/templates
+    depends_on:
+      - postgresql
+      - redis
+    networks:
+      - proxy
+
+volumes:
+  database:
+    driver: local
+  redis:
+    driver: local
