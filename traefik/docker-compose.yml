@@ -1,6 +1,5 @@
 networks:
   proxy:
-    name: proxy
     external: true
 
 secrets:
@@ -59,5 +58,6 @@ services:
       # Update domain name on these lines.
       - "traefik.http.routers.traefik-secure.tls.domains[0].main=your-domain.com"
       - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.your-domain.com"
+      - "traefik.http.routers.traefik-secure.middlewares=authentik@file"
       # (Optional) Enable API here.
       # - "traefik.http.routers.traefik-secure.service=api@internal"
